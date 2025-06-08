@@ -1,7 +1,7 @@
 from sanic import Blueprint
 from sanic.response import json
 import asyncio
-from backend.controllers.populate_controller import populate
+from controllers.populate_controller import populate
 
 bp_populate = Blueprint("populate", url_prefix="/populate")
 
