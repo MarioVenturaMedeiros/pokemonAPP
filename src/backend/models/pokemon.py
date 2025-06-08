@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String
 from models import Base
 
-class Pokemon(Base):  # ✅ Corrigir nome da classe
+class Pokemon(Base): 
     __tablename__ = "pokemon"
 
     id_pokemon = Column(Integer, primary_key=True, index=True)
