@@ -5,3 +5,4 @@ aiohttp
 sqlalchemy[asyncio]
 asyncpg
 python-dotenv
+requests
