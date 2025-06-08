@@ -2,9 +2,9 @@ from sanic import Sanic
 from sanic_ext import Extend
 from sanic_cors import CORS
 
-from backend.routes.database_routes import bp  # corrigido
-from backend.models import Base
-from backend.helpers.database.database import engine
+from routes.database_routes import bp  # corrigido
+from models import Base
+from helpers.database.database import engine
 
 app = Sanic("pokemonAPP")
 Extend(app)

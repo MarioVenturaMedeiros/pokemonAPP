@@ -1,6 +1,6 @@
 # src/backend/routes/user_routes.py
 from sanic import Blueprint
-from backend.controllers.database_controller import (
+from controllers.database_controller import (
     get_all_pokemon,
     get_all_users,
     get_pokemon_by_user

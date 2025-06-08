@@ -1,6 +1,6 @@
 # src/backend/models/user_pokemon.py
 from sqlalchemy import Column, Integer, ForeignKey, PrimaryKeyConstraint
-from backend.models import Base
+from models import Base
 
 class UserPokemon(Base):
     __tablename__ = "user_pokemon"

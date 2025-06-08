@@ -1,6 +1,6 @@
 # src/backend/models/pokemon.py
 from sqlalchemy import Column, Integer, String
-from backend.models import Base
+from models import Base
 
 class Pokemon(Base):  # ✅ Corrigir nome da classe
     __tablename__ = "pokemon"

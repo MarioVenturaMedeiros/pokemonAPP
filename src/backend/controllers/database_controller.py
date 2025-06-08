@@ -1,8 +1,8 @@
 from sanic.response import json
-from backend.helpers.database.database import SessionLocal
-from backend.models.pokemon import Pokemon
-from backend.models.user import User
-from backend.models.user_pokemon import UserPokemon
+from helpers.database.database import SessionLocal
+from models.pokemon import Pokemon
+from models.user import User
+from models.user_pokemon import UserPokemon
 from sqlalchemy.future import select
 
 async def get_all_pokemon(request):
