@@ -1,15 +1,14 @@
-# src/backend/app.py
 from sanic import Sanic
 from sanic_ext import Extend
-from sanic_cors import ExtendCORS
+from sanic_cors import CORS
 
-from backend.routes.databse_routes import bp
+from src.backend.routes.database_routes import bp  # corrigido
 from src.backend.models import Base
 from src.backend.helpers.database.database import engine
 
 app = Sanic("pokemonAPP")
 Extend(app)
-ExtendCORS(app)
+CORS(app)
 
 app.blueprint(bp)
 
