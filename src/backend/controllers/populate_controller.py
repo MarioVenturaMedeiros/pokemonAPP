@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import os
 import json
-from urllib.parse import quote  # ✅ Import necessário
+from urllib.parse import quote
 from dotenv import load_dotenv
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -18,8 +18,10 @@ POKE_API = "https://api.pokemontcg.io/v2/cards"
 pokedex = json.loads(os.getenv("POKEDEX_JSON"))
 
 async def fetch_pokemon_cards(session, name):
-    encoded_name = quote(name)  # ✅ Trata nomes com caracteres especiais
+    # ✅ Corrigido: nome entre aspas e escapado
+    encoded_name = quote(f'"{name}"')
     url = f"{POKE_API}?q=name:{encoded_name}&pageSize=100"
+    print(f"🔍 Buscando: {url}")  # Debug opcional
     async with session.get(url, headers=HEADERS) as resp:
         data = await resp.json()
         return data.get("data", [])
@@ -30,7 +32,7 @@ def get_best_card(cards):
     cards = [c for c in cards if 'images' in c and 'hp' in c and c['hp'].isdigit()]
     if not cards:
         return None
-    cards.sort(key=lambda x: (int(x['hp'])), reverse=True)
+    cards.sort(key=lambda x: int(x['hp']), reverse=True)
     return cards[0]
 
 async def populate():
