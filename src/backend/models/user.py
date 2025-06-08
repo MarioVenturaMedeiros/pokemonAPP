@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, CheckConstraint
-from src.backend.models import Base
+from backend.models import Base
 
 class User(Base):
     __tablename__ = "user"

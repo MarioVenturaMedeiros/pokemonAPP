@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
-from src.backend.models.pokemon import Pokemon
-from src.backend.models.user import User
-from src.backend.models.user_pokemon import UserPokemon
-from src.backend.helpers.database.database import SessionLocal
+from backend.models.pokemon import Pokemon
+from backend.models.user import User
+from backend.models.user_pokemon import UserPokemon
+from backend.helpers.database.database import SessionLocal
 
 load_dotenv()
 HEADERS = {}
