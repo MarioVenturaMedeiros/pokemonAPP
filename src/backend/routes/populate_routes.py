@@ -1,11 +1,12 @@
 from sanic import Blueprint
 from sanic.response import json
-import asyncio
 from controllers.populate_controller import populate
+import threading
 
 bp_populate = Blueprint("populate", url_prefix="/populate")
 
 @bp_populate.get("/")
 async def trigger_population(request):
-    asyncio.create_task(populate())  # roda em segundo plano
-    return json({"message": "População iniciada em background."})
+    # roda em uma thread separada (sem bloquear o servidor)
+    threading.Thread(target=populate).start()
+    return json({"message": "População iniciada em background (thread síncrona)."})
