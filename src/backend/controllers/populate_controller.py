@@ -34,27 +34,37 @@ def fetch_pokemon_cards(name):
         return []
 
 def get_best_card(cards):
-    if not cards:
+    valid = [c for c in cards if 'images' in c and 'hp' in c and c['hp'].isdigit()]
+    if not valid:
         return None
-    cards = [c for c in cards if 'images' in c and 'hp' in c and c['hp'].isdigit()]
-    if not cards:
+    valid.sort(key=lambda x: int(x['hp']), reverse=True)
+    return valid[0]
+
+def get_rare_card(cards):
+    rare_keywords = {"Rare", "Rare Holo", "Rare Holo EX", "Rare Ultra", "Rare Rainbow", "Rare Secret", "Rare ACE"}
+    rares = [
+        c for c in cards
+        if 'rarity' in c and c['rarity'] in rare_keywords and 'images' in c
+    ]
+    if not rares:
         return None
-    cards.sort(key=lambda x: int(x['hp']), reverse=True)
-    return cards[0]
+    rares.sort(key=lambda x: int(x.get('hp', '0')) if x.get('hp', '0').isdigit() else 0, reverse=True)
+    return rares[0]
 
 def process_pokemon(db, user, poke_id, name):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             cards = fetch_pokemon_cards(name)
-            best = get_best_card(cards)
-
-            if not best:
+            base_card = get_best_card(cards)
+            if not base_card:
                 print(f"❌ Nenhuma carta válida para {name}")
                 return False
 
-            base_img = best['images']['small']
-            rare_img = best['images']['small']
-            hp = int(best['hp'])
+            rare_card = get_rare_card(cards) or base_card
+
+            base_img = base_card['images']['small']
+            rare_img = rare_card['images']['small']
+            hp = int(base_card['hp'])
 
             pokemon = Pokemon(
                 id_pokemon=poke_id,
