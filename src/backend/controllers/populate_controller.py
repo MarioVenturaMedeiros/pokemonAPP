@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import os
 import json
+from urllib.parse import quote  # ✅ Import necessário
 from dotenv import load_dotenv
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
@@ -17,7 +18,8 @@ POKE_API = "https://api.pokemontcg.io/v2/cards"
 pokedex = json.loads(os.getenv("POKEDEX_JSON"))
 
 async def fetch_pokemon_cards(session, name):
-    url = f"{POKE_API}?q=name:{name}&pageSize=100"
+    encoded_name = quote(name)  # ✅ Trata nomes com caracteres especiais
+    url = f"{POKE_API}?q=name:{encoded_name}&pageSize=100"
     async with session.get(url, headers=HEADERS) as resp:
         data = await resp.json()
         return data.get("data", [])
@@ -34,7 +36,6 @@ def get_best_card(cards):
 async def populate():
     async with aiohttp.ClientSession() as http_session:
         async with SessionLocal() as db:
-            # Cria ou busca o usuário "burninson"
             user = User(login="burninson", currency=20)
             db.add(user)
             try:
@@ -47,7 +48,6 @@ async def populate():
                 user = result.scalar_one()
                 print("⚠️ Usuário 'burninson' já existia.")
 
-            # Popula todos os Pokémon no banco
             for poke_id_str, name in pokedex.items():
                 poke_id = int(poke_id_str)
                 cards = await fetch_pokemon_cards(http_session, name)
@@ -76,7 +76,6 @@ async def populate():
                     await db.rollback()
                     print(f"⚠️ Pokémon {poke_id} - {name} já existia.")
 
-                # Só associa Pokémon de ID 1 a 26 ao usuário
                 if poke_id <= 26:
                     user_pokemon = UserPokemon(
                         id_user=user.id_user,
