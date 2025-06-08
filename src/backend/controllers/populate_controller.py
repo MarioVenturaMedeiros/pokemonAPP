@@ -1,7 +1,7 @@
 import os
 import json
-import time
-import requests
+import asyncio
+import aiohttp
 from urllib.parse import quote
 from dotenv import load_dotenv
 from sqlalchemy.future import select
@@ -18,18 +18,22 @@ POKE_API = "https://api.pokemontcg.io/v2/cards"
 pokedex = json.loads(os.getenv("POKEDEX_JSON"))
 MAX_RETRIES = 3
 
-def fetch_pokemon_cards(name):
+async def fetch_pokemon_cards(session, name):
     encoded_name = quote(f'"{name}"')
     url = f"{POKE_API}?q=name:{encoded_name}&pageSize=100"
     print(f"🔍 Buscando: {url}")
     try:
-        response = requests.get(url, headers=HEADERS)
-        if response.status_code != 200:
-            print(f"❌ Falha ao buscar {name} — Status HTTP: {response.status_code}")
-            return []
-        data = response.json()
-        return data.get("data", [])
-    except requests.RequestException as e:
+        async with session.get(url, headers=HEADERS) as resp:
+            if resp.status != 200:
+                print(f"❌ Falha ao buscar {name} — Status HTTP: {resp.status}")
+                return []
+            try:
+                data = await resp.json()
+                return data.get("data", [])
+            except aiohttp.ContentTypeError:
+                print(f"❌ Erro ao decodificar JSON para {name}")
+                return []
+    except aiohttp.ClientError as e:
         print(f"❌ Erro de rede ao buscar {name}: {e}")
         return []
 
@@ -51,10 +55,10 @@ def get_rare_card(cards):
     rares.sort(key=lambda x: int(x.get('hp', '0')) if x.get('hp', '0').isdigit() else 0, reverse=True)
     return rares[0]
 
-def process_pokemon(db, user, poke_id, name):
+async def process_pokemon(db, session, user, poke_id, name):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            cards = fetch_pokemon_cards(name)
+            cards = await fetch_pokemon_cards(session, name)
             base_card = get_best_card(cards)
             if not base_card:
                 print(f"❌ Nenhuma carta válida para {name}")
@@ -75,10 +79,10 @@ def process_pokemon(db, user, poke_id, name):
 
             db.add(pokemon)
             try:
-                db.commit()
+                await db.commit()
                 print(f"✅ Pokémon {poke_id} - {name} adicionado.")
             except IntegrityError:
-                db.rollback()
+                await db.rollback()
                 print(f"⚠️ Pokémon {poke_id} - {name} já existia.")
 
             if poke_id <= 26:
@@ -89,33 +93,34 @@ def process_pokemon(db, user, poke_id, name):
                 )
                 db.add(user_pokemon)
                 try:
-                    db.commit()
+                    await db.commit()
                     print(f"🔗 {name} atribuído a 'burninson'.")
                 except IntegrityError:
-                    db.rollback()
+                    await db.rollback()
                     print(f"⚠️ {name} já estava associado a 'burninson'.")
 
             return True
         except Exception as e:
             print(f"⚠️ Tentativa {attempt} falhou para {name}: {e}")
-            time.sleep(1)
+            await asyncio.sleep(1)
     print(f"💥 Todas as tentativas falharam para {name}")
     return False
 
-def populate():
-    with SessionLocal() as db:
-        user = User(login="burninson", currency=20)
-        db.add(user)
-        try:
-            db.commit()
-            db.refresh(user)
-            print("✅ Usuário 'burninson' criado.")
-        except IntegrityError:
-            db.rollback()
-            result = db.execute(select(User).where(User.login == "burninson"))
-            user = result.scalar_one()
-            print("⚠️ Usuário 'burninson' já existia.")
+async def populate():
+    async with aiohttp.ClientSession() as http_session:
+        async with SessionLocal() as db:
+            user = User(login="burninson", currency=20)
+            db.add(user)
+            try:
+                await db.commit()
+                await db.refresh(user)
+                print("✅ Usuário 'burninson' criado.")
+            except IntegrityError:
+                await db.rollback()
+                result = await db.execute(select(User).where(User.login == "burninson"))
+                user = result.scalar_one()
+                print("⚠️ Usuário 'burninson' já existia.")
 
-        for poke_id_str, name in pokedex.items():
-            poke_id = int(poke_id_str)
-            process_pokemon(db, user, poke_id, name)
+            for poke_id_str, name in pokedex.items():
+                poke_id = int(poke_id_str)
+                await process_pokemon(db, http_session, user, poke_id, name)
