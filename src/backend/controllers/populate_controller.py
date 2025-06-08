@@ -16,7 +16,7 @@ load_dotenv()
 HEADERS = {}
 POKE_API = "https://api.pokemontcg.io/v2/cards"
 pokedex = json.loads(os.getenv("POKEDEX_JSON"))
-MAX_RETRIES = 6
+MAX_RETRIES = 3
 
 async def fetch_pokemon_cards(session, name):
     encoded_name = quote(f'"{name}"')
@@ -104,4 +104,16 @@ async def populate():
             try:
                 await db.commit()
                 await db.refresh(user)
-                print("✅ Usuário 'burninson' cr
+                print("✅ Usuário 'burninson' criado.")
+            except IntegrityError:
+                await db.rollback()
+                result = await db.execute(select(User).where(User.login == "burninson"))
+                user = result.scalar_one()
+                print("⚠️ Usuário 'burninson' já existia.")
+
+            for poke_id_str, name in pokedex.items():
+                poke_id = int(poke_id_str)
+                await process_pokemon(db, http_session, user, poke_id, name)
+
+if __name__ == "__main__":
+    asyncio.run(populate())
