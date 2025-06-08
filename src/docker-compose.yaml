@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pokemonAPP
+    ports:
+      - "5433:5432"
+    networks:
+      - app-tier
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    container_name: fillmore-postgres
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    image: sanic-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    container_name: fillmore-backend
+    networks:
+      - app-tier
+
+networks:
+  app-tier:
+    driver: bridge
