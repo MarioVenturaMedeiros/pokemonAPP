@@ -5,14 +5,14 @@ from sanic_cors import CORS
 from routes.database_routes import bp  # corrigido
 from models import Base
 from helpers.database.database import engine
-from routes.populate_routes import populate_bp
+from routes.populate_routes import bp_populate
 
 app = Sanic("pokemonAPP")
 Extend(app)
 CORS(app)
 
 app.blueprint(bp)
-app.blueprint(populate_bp)
+app.blueprint(bp_populate)
 
 @app.before_server_start
 async def setup_database(app, _):
