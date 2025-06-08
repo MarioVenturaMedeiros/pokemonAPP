@@ -14,8 +14,13 @@ services:
       - app-tier
     volumes:
       - ./postgres:/var/lib/postgresql/data
-    container_name: fillmore-postgres
+    container_name: pokemonAPP-postgres
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   backend:
     build:
@@ -23,16 +28,17 @@ services:
     image: sanic-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-    env_file:
-      - .env
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/pokemonAPP
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-    container_name: fillmore-backend
+      postgres:
+        condition: service_healthy
+    container_name: pokemonAPP-backend
     networks:
       - app-tier
+    env_file:
+      - .env
 
 networks:
   app-tier:
