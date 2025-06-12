@@ -1,6 +1,7 @@
 sanic
 sanic-ext
 sanic-cors
+sanic-sessions
 aiohttp
 sqlalchemy[asyncio]
 asyncpg
