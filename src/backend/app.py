@@ -12,7 +12,7 @@ from helpers.database.database import engine
 
 app = Sanic("pokemonAPP")
 Extend(app)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 Session(app, interface=InMemorySessionInterface())
 

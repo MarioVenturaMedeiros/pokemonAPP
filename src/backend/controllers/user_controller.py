@@ -4,10 +4,11 @@ from sqlalchemy.exc import IntegrityError
 from models.user import User
 from models.user_pokemon import UserPokemon
 from helpers.database.database import SessionLocal
+import traceback
 
 async def create_user(request):
     try:
-        data = await request.json
+        data = request.json
         login = data.get("login")
 
         if not login:
@@ -42,7 +43,7 @@ async def create_user(request):
 
 async def login_user(request):
     try:
-        data = await request.json
+        data = request.json
         login = data.get("login")
 
         if not login:
@@ -58,4 +59,6 @@ async def login_user(request):
             return response.json({"message": "Login realizado com sucesso!", "user_id": user.id_user})
 
     except Exception as e:
+        print("💥 Erro em login_user:")
+        traceback.print_exc()  # ✅ mostra o erro real no terminal
         return response.json({"error": str(e)}, status=500)

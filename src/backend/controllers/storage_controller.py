@@ -52,14 +52,62 @@ async def get_combined_pokemons(request):
         return response.json({"error": "Usuário não autenticado."}, status=401)
 
     offset = int(request.args.get("offset", 0))
-    limit = int(request.args.get("limit", 20))
+    limit = int(request.args.get("limit", 30))
+    stage = request.args.get("stage", "owned")
 
     async with SessionLocal() as db:
-        user_pokemons, pokemon_ids = await get_user_pokemons_list(user_id, db)
-        remaining_pokemons = await get_remaining_pokemons_list(pokemon_ids, offset, limit, db)
+        if stage == "owned":
+            # Paginado por pokémons que o usuário possui
+            result = await db.execute(
+                select(UserPokemon, Pokemon)
+                .join(Pokemon, Pokemon.id_pokemon == UserPokemon.id_pokemon)
+                .where(UserPokemon.id_user == user_id)
+                .order_by(Pokemon.id_pokemon)
+                .offset(offset)
+                .limit(limit)
+            )
 
-        combined = sorted(user_pokemons + remaining_pokemons, key=lambda p: p["id"])
-        return response.json(combined)
+            pokemons = []
+            for user_pokemon, pokemon in result.all():
+                image = pokemon.base_image if user_pokemon.rarity == 0 else pokemon.rare_image
+                pokemons.append({
+                    "id": pokemon.id_pokemon,
+                    "image": image,
+                    "hp": pokemon.hp,
+                    "owned": True
+                })
+
+            return response.json(pokemons)
+
+        elif stage == "unowned":
+            # Primeiro, pega os IDs que o usuário já possui (sem paginação)
+            result = await db.execute(
+                select(UserPokemon.id_pokemon).where(UserPokemon.id_user == user_id)
+            )
+            owned_ids = {row[0] for row in result.all()}
+
+            # Agora, seleciona os que o usuário não tem com paginação
+            stmt = (
+                select(Pokemon)
+                .where(Pokemon.id_pokemon.notin_(owned_ids))
+                .order_by(Pokemon.id_pokemon)
+                .offset(offset)
+                .limit(limit)
+            )
+            result = await db.execute(stmt)
+            pokemons = result.scalars().all()
+
+            return response.json([
+                {
+                    "id": p.id_pokemon,
+                    "image": p.base_image,
+                    "hp": p.hp,
+                    "owned": False
+                } for p in pokemons
+            ])
+
+        else:
+            return response.json({"error": "Parâmetro 'stage' inválido."}, status=400)
 
 async def get_user_currency(request):
     user_id = request.ctx.session.get("user_id")
