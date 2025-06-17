@@ -21,11 +21,13 @@ async def get_user_pokemons_list(user_id: int, db):
         pokemons.append({
             "id": pokemon.id_pokemon,
             "image": image,
-            "hp": pokemon.hp
+            "hp": pokemon.hp,
+            "rarity": user_pokemon.rarity
         })
         pokemon_ids.add(pokemon.id_pokemon)
 
     return pokemons, pokemon_ids
+
 
 async def get_remaining_pokemons_list(pokemon_ids: set, offset: int, limit: int, db):
     stmt = (
@@ -57,7 +59,7 @@ async def get_combined_pokemons(request):
 
     async with SessionLocal() as db:
         if stage == "owned":
-            # Paginado por pokémons que o usuário possui
+            # Pokémons que o usuário possui
             result = await db.execute(
                 select(UserPokemon, Pokemon)
                 .join(Pokemon, Pokemon.id_pokemon == UserPokemon.id_pokemon)
@@ -74,19 +76,20 @@ async def get_combined_pokemons(request):
                     "id": pokemon.id_pokemon,
                     "image": image,
                     "hp": pokemon.hp,
-                    "owned": True
+                    "owned": True,
+                    "rarity": user_pokemon.rarity  # 🔥 Inclui a raridade
                 })
 
             return response.json(pokemons)
 
         elif stage == "unowned":
-            # Primeiro, pega os IDs que o usuário já possui (sem paginação)
+            # IDs dos pokémons que o usuário já possui
             result = await db.execute(
                 select(UserPokemon.id_pokemon).where(UserPokemon.id_user == user_id)
             )
             owned_ids = {row[0] for row in result.all()}
 
-            # Agora, seleciona os que o usuário não tem com paginação
+            # Pokémons não possuídos
             stmt = (
                 select(Pokemon)
                 .where(Pokemon.id_pokemon.notin_(owned_ids))
@@ -102,12 +105,14 @@ async def get_combined_pokemons(request):
                     "id": p.id_pokemon,
                     "image": p.base_image,
                     "hp": p.hp,
-                    "owned": False
+                    "owned": False,
+                    "rarity": None  # 🔥 Não possui raridade
                 } for p in pokemons
             ])
 
         else:
             return response.json({"error": "Parâmetro 'stage' inválido."}, status=400)
+
 
 async def get_user_currency(request):
     user_id = request.ctx.session.get("user_id")
@@ -167,10 +172,9 @@ async def buy_card(request):
             if user_pokemon.rarity == 0:
                 user_pokemon.rarity = 1
                 action = "Raridade atualizada!"
+                user.currency -= 3
             else:
                 action = "Você já tem esse Pokémon com raridade máxima."
-
-            user.currency -= 3
 
         await db.commit()
         return response.json({
