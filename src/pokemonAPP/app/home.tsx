@@ -10,7 +10,7 @@ export default function Home() {
       <Text style={styles.logo}>pokemonAPP</Text>
 
       <View style={styles.buttonsContainer}>
-        <Button title="Play" onPress={() => console.log('Play pressed')} />
+        <Button title="Play" onPress={() => router.push('/play')} />
         <Button title="Collection" onPress={() => router.push('/collection')} />
       </View>
     </View>

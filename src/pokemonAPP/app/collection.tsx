@@ -30,6 +30,7 @@ export default function Collection() {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [offset, setOffset] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
   const [stage, setStage] = useState<'owned' | 'unowned'>('owned');
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
@@ -48,7 +49,8 @@ export default function Collection() {
   };
 
   const fetchPokemons = async () => {
-    if (!hasMore) return;
+    if (!hasMore || isFetching) return;
+    setIsFetching(true);
     setLoading(true);
 
     try {
@@ -90,6 +92,7 @@ export default function Collection() {
     }
 
     setLoading(false);
+    setIsFetching(false);
   };
 
   const refreshData = async () => {
@@ -152,7 +155,11 @@ export default function Collection() {
         numColumns={3}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        onEndReached={fetchPokemons}
+        onEndReached={() => {
+          if (!isFetching && hasMore) {
+            fetchPokemons();
+          }
+        }}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
           loading ? <ActivityIndicator size="large" color="#FFD700" /> : null

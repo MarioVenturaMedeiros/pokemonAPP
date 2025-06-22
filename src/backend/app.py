@@ -6,7 +6,9 @@ from sanic_session import Session, InMemorySessionInterface
 from routes.database_routes import bp
 from routes.populate_routes import bp_populate
 from routes.storage_routes import bp_storage
-from routes.user_routes import bp_user  # 🆕 user
+from routes.user_routes import bp_user
+from routes.game_routes import bp_game 
+
 from models import Base
 from helpers.database.database import engine
 
@@ -21,6 +23,7 @@ app.blueprint(bp)
 app.blueprint(bp_populate)
 app.blueprint(bp_storage)
 app.blueprint(bp_user)
+app.blueprint(bp_game)
 
 @app.before_server_start
 async def setup_database(app, _):
